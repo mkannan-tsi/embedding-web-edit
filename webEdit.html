@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Embedding Web Edit using the JavaScript API</title>
+    <script src="https://public.tableau.com/javascripts/api/tableau-2.min.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript">
+        var containerDiv, viz;
+        var viz_options = {
+            hideTabs: true,
+            hideToolbar: true,
+            onFirstInteractive: function () {
+            	viz.getCurrentUrlAsync().then (function(current_url){
+            	    console.log (current_url);
+            	})
+                $("#edit").show();
+            }
+        };
+        // Initial visualization load
+        function initViz() {
+            containerDiv = document.getElementById("vizContainer");
+            var viz_url = "https://<server>/t/<site>/views/<workbook>/<view>";               
+            loadViz(containerDiv, viz_url, viz_options);
+        }
+        // Modified options that adds an event listener for change in URL of iframe
+        function launchEdit() {
+            viz.getCurrentUrlAsync().then(function(current_url){
+                $("#edit").hide();
+                edit_url = current_url.split('?')[0].replace('/views', '/authoring');                  
+                edit_options = {
+                	hideTabs: true,
+                	hideToolbar: true,
+                    onFirstInteractive: function () {
+                        var iframe = document.querySelectorAll('iframe')[0];
+                        iframe.onload = function(){
+                            // Getting the URL post exit from web edit window
+                            $("#edit").show();
+                            console.log ("This always displays");
+                            viz.getCurrentUrlAsync().then (function(current_url){
+                                console.log (current_url);
+                                loadViz (containerDiv, current_url, viz_options); 
+                            })
+                        }
+                    }
+                };
+                loadViz (containerDiv, edit_url, edit_options);          
+            })
+        }
+
+        // Actually loading the visualization
+        function loadViz (containerDiv, url, options) {
+            if (viz) {
+                viz.dispose();
+            }
+            viz = new tableau.Viz(containerDiv, url, options);
+        }
+    </script>
+</head>
+
+<body onload="initViz();">
+    <button hidden onclick="launchEdit();" id="edit">Edit Viz</button>
+    <div id="vizContainer" style="width:800px; height:700px;"></div>
+</body>
+
+</html>
